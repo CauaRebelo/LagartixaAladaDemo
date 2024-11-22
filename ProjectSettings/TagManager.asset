@@ -11,6 +11,7 @@ TagManager:
   - BulletHell
   - GlobalLight
   - Wall
+  - Ice
   layers:
   - Default
   - TransparentFX

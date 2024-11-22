@@ -44,6 +44,19 @@ public class PlayerAttack : MonoBehaviour
             playerMovement.canAttack = true;
             playerMovement.hitEnemy = true;
         }
+        if(col.gameObject.tag == "Ice")
+        {
+            float side;
+            if (!playerMovement.isFacingRight)
+            {
+                side = -1f;
+            }
+            else
+            {
+                side = 1f;
+            }
+            col.gameObject.GetComponent<IceBehaviour>().Damage(side);
+        }
     }
 
 }
