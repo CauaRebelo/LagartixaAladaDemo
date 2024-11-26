@@ -44,6 +44,11 @@ public class AnimationController : MonoBehaviour
         agentAnimator.SetBool("Riposite", val);
     }
 
+    private void SetIceBlockAnimation(bool val)
+    {
+        agentAnimator.SetBool("IceBlock", val);
+    }
+
     private void SetDamagedAnimation(bool val)
     {
         agentAnimator.SetBool("Damaged", val);
@@ -103,6 +108,11 @@ public class AnimationController : MonoBehaviour
     public void AnimatePlayerRiposite(bool val)
     {
         SetRipositeAnimation(val);
+    }
+
+    public void AnimatePlayerIceBlock(bool val)
+    {
+        SetIceBlockAnimation(val);
     }
 
     public void AnimatePlayerDamaged(bool val)

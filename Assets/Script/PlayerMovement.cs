@@ -23,6 +23,7 @@ public class PlayerMovement : MonoBehaviour
     public GameObject dashaoe_prefab_fire;
     public GameObject dashaoe_prefab_ice;
     public GameObject dashaoe_prefab_light;
+    public GameObject iceBlock_prefab;
 
     public int enchantment;
     private int maxEnchantment;
@@ -60,6 +61,7 @@ public class PlayerMovement : MonoBehaviour
     //textoArvore.SetText("Pontos: " + pontosArvore.ToString());
 
     public bool canDash = true;
+    public int atkQueue = 0;
     public bool isAbleToAct = true;
     private float dashingPower = 24f;
     private float dashingTime = 0.2f;
@@ -79,6 +81,9 @@ public class PlayerMovement : MonoBehaviour
 
     [field: SerializeField]
     public UnityEvent<bool> OnRiposite { get; set; }
+
+    [field: SerializeField]
+    public UnityEvent<bool> OnIceBlock { get; set; }
 
     [field: SerializeField]
     public UnityEvent<bool> OnAttack { get; set; }
@@ -137,7 +142,7 @@ public class PlayerMovement : MonoBehaviour
             rb.velocity = new Vector2(rb.velocity.x, jumpingPower);
             if (canAttack == false)
             {
-                normalAttack.SetActive(false);
+                AttackController(false, true);
                 canAttack = true;
             }
             jumpBufferTimeCounter = 0f;
@@ -148,7 +153,7 @@ public class PlayerMovement : MonoBehaviour
             rb.velocity = new Vector2(rb.velocity.x, jumpingPower);
             if (canAttack == false)
             {
-                normalAttack.SetActive(false);
+                AttackController(false, true);
                 canAttack = true;
             }
         }
@@ -195,7 +200,12 @@ public class PlayerMovement : MonoBehaviour
             ChangeColor();
         }
 
-        Flip(false);
+        if (Input.GetButtonDown("Fire4") && canAttack && treeController.AcessarArvore(0, 0))
+        {
+            IceBlock();
+        }
+
+            Flip(false);
         }
     }
 
@@ -257,7 +267,7 @@ public class PlayerMovement : MonoBehaviour
         playerDamage.iframe = true;
         if(canAttack == false)
         {
-            normalAttack.SetActive(false);
+            AttackController(false, true);
             canAttack = true;
             StopCoroutine(attackCo);
         }
@@ -372,14 +382,14 @@ public class PlayerMovement : MonoBehaviour
         OnAttack?.Invoke(false);
         OnVerticalAttack?.Invoke(false);
         rb.velocity = Vector2.zero;
-        normalAttack.SetActive(true);
+        AttackController(true, false);
         OnLongAttack?.Invoke(true);
         attackAnim.Play("HorizontalSwing");
         yield return new WaitForSeconds(horizontalAttackCooldown);
         rb.drag = 0;
         OnLongAttack?.Invoke(false);
         spamLongAttack = false;
-        normalAttack.SetActive(false);
+        AttackController(false, false);
         isAbleToAct = true;
         canMove = true;
         canAttack = true;
@@ -445,13 +455,13 @@ public class PlayerMovement : MonoBehaviour
         }
         OnAttack?.Invoke(false);
         OnLongAttack?.Invoke(false);
-        normalAttack.SetActive(true);
+        AttackController(true, false);
         OnVerticalAttack?.Invoke(true);
         attackAnim.Play("VerticalSwing");
         yield return new WaitForSeconds(verticalAttackCooldown);
         rb.drag = 0;
         OnVerticalAttack?.Invoke(false);
-        normalAttack.SetActive(false);
+        AttackController(false, false);
         spamVerticalAttack = false;
         isAbleToAct = true;
         canMove = true;
@@ -515,7 +525,7 @@ public class PlayerMovement : MonoBehaviour
         rb.velocity = Vector2.zero;
         OnAttack?.Invoke(false);
         OnLongAttack?.Invoke(false);
-        normalAttack.SetActive(true);
+        AttackController(true, false);
         OnVerticalAttack?.Invoke(true);
         attackAnim.Play("VerticalSwingAir");
         yield return new WaitForSeconds(0.2f);
@@ -526,7 +536,7 @@ public class PlayerMovement : MonoBehaviour
         }
         yield return new WaitForSeconds(verticalAttackAirCooldown - 0.2f);
         rb.drag = 0;
-        normalAttack.SetActive(false);
+        AttackController(false, false);
         OnVerticalAttack?.Invoke(false);
         spamVerticalAttack = false;
         isAbleToAct = true;
@@ -603,14 +613,14 @@ public class PlayerMovement : MonoBehaviour
         rb.velocity = Vector2.zero;
         OnLongAttack?.Invoke(false);
         OnVerticalAttack?.Invoke(false);
-        normalAttack.SetActive(true);
+        AttackController(true, false);
         OnAttack?.Invoke(true);
         attackAnim.Play("NormalSwing");
         yield return new WaitForSeconds(attackCooldown);
         rb.drag = 0;
         OnAttack?.Invoke(false);
         spamAttack = false;
-        normalAttack.SetActive(false);
+        AttackController(false, false);
         isAbleToAct = true;
         canMove = true;
         canAttack = true;
@@ -676,6 +686,20 @@ public class PlayerMovement : MonoBehaviour
 
     }
 
+    private void IceBlock()
+    {
+        canDash = false;
+        isAbleToAct = false;
+        canMove = false;
+        if (canDash == false)
+        {
+            playerDamage.iframe = false;
+        }
+        OnIceBlock?.Invoke(true);
+        EventSystem.current.IceSummon();
+        rb.velocity = Vector2.zero;
+    }
+
     private IEnumerator ShowPoints()
     {
         yield return new WaitForSeconds(2f);
@@ -699,6 +723,45 @@ public class PlayerMovement : MonoBehaviour
         canDash = true;
         isAbleToAct = true;
         canMove = true;
+    }
+
+    public void CreateIce()
+    {
+        Instantiate(iceBlock_prefab, transform.position + new Vector3(0 + 1 * transform.localScale.x, 0, 0), Quaternion.identity);
+    }
+
+    public void IceBlockEnd()
+    {
+        rb.drag = 0;
+        OnIceBlock?.Invoke(false);
+        canDash = true;
+        isAbleToAct = true;
+        canMove = true;
+    }
+
+    public void AttackController(bool enable, bool turnoff)
+    {
+        if(enable)
+        {
+            atkQueue++;
+        }
+        else
+        {
+            atkQueue--;
+        }
+        if(turnoff)
+        {
+            atkQueue = 0;
+        }
+        if (atkQueue <= 0)
+        {
+            normalAttack.SetActive(false);
+            atkQueue = 0;
+        }
+        else
+        {
+            normalAttack.SetActive(true);
+        }
     }
 
     public void Sitdown()

@@ -40,6 +40,15 @@ public class EventSystem : MonoBehaviour
         }
     }
 
+    public event Action onIceSummon;
+    public void IceSummon()
+    {
+        if (onIceSummon != null)
+        {
+            onIceSummon();
+        }
+    }
+
     public event Action onBossElementeChange;
     public void BossElementeChange()
     {
